@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart as BarChartRecharts, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { 
   Package, 
@@ -68,7 +68,7 @@ const DashboardEtiquetas = () => {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setLoadingTime(0);
@@ -108,14 +108,14 @@ const DashboardEtiquetas = () => {
       }
       setLoadingTime(0);
     }
-  };
+  }, [loadingTimer]);
 
   useEffect(() => {
     const hasCache = loadFromCache();
     if (!hasCache) {
       fetchData();
     }
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     let interval;
@@ -195,60 +195,64 @@ const DashboardEtiquetas = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="p-6 flex-1 flex flex-col max-w-[1440px] mx-auto w-full">
-        <div className="flex flex-row items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Tags className="h-8 w-8 text-blue-500" />
-            <h1 className="text-2xl font-semibold text-gray-900">Monitoramento de Etiquetas</h1>
+      <div className="p-4 md:p-6 flex-1 flex flex-col max-w-[1440px] mx-auto w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <img
+              src="/logo-sv.png" // Adicione a logo da empresa na pasta public
+              alt="Logo SV"
+              className="h-20 w-auto"
+            />
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Etiquetas Sobral</h1>
           </div>
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
           >
             <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             {loading ? `Atualizando... (${loadingTime}s)` : 'Atualizar dados'}
           </button>
         </div>
 
-        <div className="flex flex-row gap-4 mb-6">
-          <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-2xl shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Package className="h-5 w-5 text-blue-500" />
               <p className="text-sm font-medium text-gray-500">Total em Estoque</p>
             </div>
-            <p className="text-3xl font-medium text-gray-900">{stats.totalEstoque.toLocaleString()}</p>
-            <p className="text-sm text-gray-500 mt-1">produtos cadastrados</p>
+            <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.totalEstoque.toLocaleString()}</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">produtos cadastrados</p>
           </div>
 
-          <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm">
+          <div className="bg-white p-4 rounded-2xl shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Tags className="h-5 w-5 text-green-500" />
               <p className="text-sm font-medium text-gray-500">Produtos Etiquetados</p>
             </div>
-            <p className="text-3xl font-medium text-gray-900">{stats.produtosEtiquetados.toLocaleString()}</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.produtosEtiquetados.toLocaleString()}</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">
               {(stats.produtosEtiquetados / stats.totalEstoque * 100).toFixed(1)}% do total
             </p>
           </div>
 
-          <div className="flex-1 bg-white p-4 rounded-2xl shadow-sm">
+          <div className="bg-white p-4 rounded-2xl shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle className="h-5 w-5 text-red-500" />
               <p className="text-sm font-medium text-gray-500">Pendentes</p>
             </div>
-            <p className="text-3xl font-medium text-gray-900">{stats.produtosSemEtiqueta.toLocaleString()}</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.produtosSemEtiqueta.toLocaleString()}</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">
               {(stats.produtosSemEtiqueta / stats.totalEstoque * 100).toFixed(1)}% do total
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-4 rounded-2xl shadow-sm h-[400px]">
             <div className="flex items-center gap-2 mb-4">
               <BarChart2 className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-medium text-gray-900">Distribuição de Etiquetas</h2>
+              <h2 className="text-base md:text-lg font-medium text-gray-900">Distribuição de Etiquetas</h2>
             </div>
             <div className="h-[calc(100%-2rem)]">
               <ResponsiveContainer width="100%" height="100%">
@@ -258,6 +262,10 @@ const DashboardEtiquetas = () => {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#666', fontSize: 12 }}
+                    height={50}
+                    interval={0}
+                    //angle={-45}
+                    //textAnchor="end"
                   />
                   <YAxis
                     axisLine={false}
@@ -274,10 +282,14 @@ const DashboardEtiquetas = () => {
                   />
                   <Bar
                     dataKey="value"
-                    fill="#007AFF"
+                    fill="#FF1800"
                     radius={[4, 4, 0, 0]}
                   >
-                    <LabelList content={<CustomLabel />} />
+                    <LabelList 
+                      content={<CustomLabel />}
+                      position="top"
+                      className="text-xs md:text-sm"
+                    />
                   </Bar>
                 </BarChartRecharts>
               </ResponsiveContainer>
@@ -287,34 +299,34 @@ const DashboardEtiquetas = () => {
           <div className="bg-white p-4 rounded-2xl shadow-sm h-[400px]">
             <div className="flex items-center gap-2 mb-4">
               <Info className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-medium text-gray-900">Detalhes Adicionais</h2>
+              <h2 className="text-base md:text-lg font-medium text-gray-900">Detalhes Adicionais</h2>
             </div>
             <div className="space-y-6 h-[calc(100%-2rem)] flex flex-col justify-center">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Tags className="h-4 w-4 text-orange-500" />
-                  <p className="text-sm font-medium text-gray-500">
+                  <p className="text-xs md:text-sm font-medium text-gray-500">
                     Produtos com Múltiplas Etiquetas
                   </p>
                 </div>
-                <p className="text-3xl font-medium text-gray-900">
+                <p className="text-2xl md:text-3xl font-medium text-gray-900">
                   {stats.produtosMultiplasEtiquetas.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs md:text-sm text-gray-500 mt-1">
                   {(stats.produtosMultiplasEtiquetas / stats.totalEstoque * 100).toFixed(1)}% do total
                 </p>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <AlertCircle className="h-4 w-4 text-yellow-500" />
-                  <p className="text-sm font-medium text-gray-500">
+                  <p className="text-xs md:text-sm font-medium text-gray-500">
                     Etiquetas Duplicadas/Triplicadas
                   </p>
                 </div>
-                <p className="text-3xl font-medium text-gray-900">
+                <p className="text-2xl md:text-3xl font-medium text-gray-900">
                   {stats.etiquetasDuplicadas.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs md:text-sm text-gray-500 mt-1">
                   {(stats.etiquetasDuplicadas / stats.totalEstoque * 100).toFixed(1)}% do total em etiquetas extras
                 </p>
               </div>
@@ -322,7 +334,7 @@ const DashboardEtiquetas = () => {
           </div>
         </div>
 
-        <div className="text-center text-sm text-gray-500 mt-auto">
+        <div className="text-center text-xs md:text-sm text-gray-500 mt-auto">
         Última atualização: {formatLastUpdate(lastUpdate)}
         {lastUpdateDuration && ` (Tempo de atualização: ${lastUpdateDuration.toFixed(1)}s)`}
         {lastUpdate && (
@@ -331,7 +343,7 @@ const DashboardEtiquetas = () => {
               localStorage.clear();
               window.location.reload();
             }}
-            className="ml-4 text-blue-500 hover:text-blue-600 underline"
+            className="ml-4 text-red-500 hover:text-red-800 underline"
           >
             Limpar cache
           </button>
