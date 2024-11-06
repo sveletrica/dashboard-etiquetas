@@ -35,11 +35,20 @@ const DashboardEtiquetas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingTime, setLoadingTime] = useState(0);
-  const [loadingTimer, setLoadingTimer] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lastUpdateDuration, setLastUpdateDuration] = useState(null);
 
-  const loadFromCache = () => {
+  const saveToCache = useCallback((data, timestamp, duration) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, timestamp.toISOString());
+      localStorage.setItem(CACHE_DURATION_KEY, duration.toString());
+    } catch (error) {
+      console.error('Erro ao salvar cache:', error);
+    }
+  }, []);
+
+  const loadFromCache = useCallback(() => {
     try {
       const cachedData = localStorage.getItem(CACHE_KEY);
       const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
@@ -56,17 +65,11 @@ const DashboardEtiquetas = () => {
       console.error('Erro ao carregar cache:', error);
     }
     return false;
-  };
+  }, []);
 
-  const saveToCache = (data, timestamp, duration) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, timestamp.toISOString());
-      localStorage.setItem(CACHE_DURATION_KEY, duration.toString());
-    } catch (error) {
-      console.error('Erro ao salvar cache:', error);
-    }
-  };
+  const clearLoadingTimer = useCallback(() => {
+    setLoadingTime(0);
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -103,27 +106,25 @@ const DashboardEtiquetas = () => {
       setError(err.message);
     } finally {
       setLoading(false);
-      if (loadingTimer) {
-        clearInterval(loadingTimer);
-      }
-      setLoadingTime(0);
+      clearLoadingTimer();
     }
-  }, [loadingTimer]);
+  }, [saveToCache, clearLoadingTimer]);
 
+  // Efeito para carregar dados iniciais
   useEffect(() => {
     const hasCache = loadFromCache();
     if (!hasCache) {
       fetchData();
     }
-  }, [fetchData]);
+  }, [fetchData, loadFromCache]);
 
+  // Efeito para o contador de loading
   useEffect(() => {
     let interval;
     if (loading) {
       interval = setInterval(() => {
-        setLoadingTime(time => time + 1);
+        setLoadingTime(prev => prev + 1);
       }, 1000);
-      setLoadingTimer(interval);
     }
     return () => {
       if (interval) {
