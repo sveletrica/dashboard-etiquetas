@@ -335,7 +335,7 @@ const DashboardEtiquetas = () => {
           </div>
         </div>
 
-        <div className="text-center text-xs md:text-sm text-gray-500 mt-auto">
+        <div className="text-center text-xs md:text-sm text-gray-500 mt-1">
         Última atualização: {formatLastUpdate(lastUpdate)}
         {lastUpdateDuration && ` (Tempo de atualização: ${lastUpdateDuration.toFixed(1)}s)`}
         {lastUpdate && (
