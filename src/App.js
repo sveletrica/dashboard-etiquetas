@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart as BarChartRecharts, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { 
   Package, 
@@ -9,13 +9,64 @@ import {
   RotateCw 
 } from 'lucide-react';
 
+const CACHE_KEY = 'dashboard_etiquetas_cache';
+const CACHE_TIMESTAMP_KEY = 'dashboard_etiquetas_last_update';
+const CACHE_DURATION_KEY = 'dashboard_etiquetas_update_duration';
+
+const formatLastUpdate = (date) => {
+  if (!date) return '';
+  
+  const options = {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  };
+
+  return date.toLocaleString('pt-BR', options);
+};
+
 const DashboardEtiquetas = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
   const [loadingTime, setLoadingTime] = useState(0);
+  const [loadingTimer, setLoadingTimer] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(null);
   const [lastUpdateDuration, setLastUpdateDuration] = useState(null);
+
+  const loadFromCache = () => {
+    try {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+      const cachedDuration = localStorage.getItem(CACHE_DURATION_KEY);
+
+      if (cachedData && cachedTimestamp) {
+        setStats(JSON.parse(cachedData));
+        setLastUpdate(new Date(cachedTimestamp));
+        setLastUpdateDuration(parseFloat(cachedDuration));
+        setLoading(false);
+        return true;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar cache:', error);
+    }
+    return false;
+  };
+
+  const saveToCache = (data, timestamp, duration) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, timestamp.toISOString());
+      localStorage.setItem(CACHE_DURATION_KEY, duration.toString());
+    } catch (error) {
+      console.error('Erro ao salvar cache:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -28,40 +79,58 @@ const DashboardEtiquetas = () => {
         throw new Error('Erro ao buscar dados');
       }
       const data = await response.json();
-      setStats({
+      
+      const processedData = {
         totalEstoque: data.totalEstoque || 0,
         produtosEtiquetados: data.produtosEtiquetados || 0,
         produtosSemEtiqueta: data.produtosSemEtiqueta || 0,
         produtosMultiplasEtiquetas: data.produtosMultiplasEtiquetas || 0,
         etiquetasDuplicadas: data.etiquetasDuplicadas || 0
-      });
-      
+      };
+
       const endTime = Date.now();
-      setLastUpdateDuration((endTime - startTime) / 1000); // Converter para segundos
-      setLastUpdate(new Date());
+      const duration = (endTime - startTime) / 1000;
+      const timestamp = new Date();
+
+      setStats(processedData);
+      setLastUpdate(timestamp);
+      setLastUpdateDuration(duration);
       setError(null);
+
+      saveToCache(processedData, timestamp, duration);
+
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+      if (loadingTimer) {
+        clearInterval(loadingTimer);
+      }
+      setLoadingTime(0);
     }
   };
 
-  // Efeito para o contador de loading
-  React.useEffect(() => {
+  useEffect(() => {
+    const hasCache = loadFromCache();
+    if (!hasCache) {
+      fetchData();
+    }
+  }, []);
+
+  useEffect(() => {
     let interval;
     if (loading) {
       interval = setInterval(() => {
         setLoadingTime(time => time + 1);
       }, 1000);
+      setLoadingTimer(interval);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [loading]);
-
-  // Efeito para carregar dados iniciais
-  React.useEffect(() => {
-    fetchData();
-  }, []);
 
   if (loading && !stats) {
     return (
@@ -122,23 +191,6 @@ const DashboardEtiquetas = () => {
         {`${value.toLocaleString()} (${percentual}%)`}
       </text>
     );
-  };
-
-  const formatLastUpdate = (date) => {
-    if (!date) return '';
-    
-    const options = {
-      timeZone: 'America/Sao_Paulo',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    };
-
-    return date.toLocaleString('pt-BR', options);
   };
 
   return (
@@ -271,9 +323,20 @@ const DashboardEtiquetas = () => {
         </div>
 
         <div className="text-center text-sm text-gray-500 mt-auto">
-          Última atualização: {formatLastUpdate(lastUpdate)}
-          {lastUpdateDuration && ` (Tempo de atualização: ${lastUpdateDuration.toFixed(1)}s)`}
-        </div>
+        Última atualização: {formatLastUpdate(lastUpdate)}
+        {lastUpdateDuration && ` (Tempo de atualização: ${lastUpdateDuration.toFixed(1)}s)`}
+        {lastUpdate && (
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}
+            className="ml-4 text-blue-500 hover:text-blue-600 underline"
+          >
+            Limpar cache
+          </button>
+        )}
+      </div>
       </div>
     </div>
   );
