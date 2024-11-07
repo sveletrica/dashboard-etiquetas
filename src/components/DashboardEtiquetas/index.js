@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BarChart as BarChartRecharts, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart as BarChartRecharts, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { 
   Package, 
   Tags, 
   AlertCircle, 
   BarChart2, 
   Info, 
-  RotateCw 
+  RotateCw,
+  AlertTriangle,
+  Barcode
 } from 'lucide-react';
 
 // Função auxiliar para formatar data
@@ -39,6 +41,17 @@ const DashboardEtiquetas = ({ filial }) => {
   const CACHE_TIMESTAMP_KEY = `dashboard_etiquetas_last_update_${filial.id}`;
   const CACHE_DURATION_KEY = `dashboard_etiquetas_update_duration_${filial.id}`;
 
+  const isValidCache = (cachedData) => {
+    try {
+      const data = JSON.parse(cachedData);
+      return data.emStkSemEtiq !== undefined && 
+        data.bindSemStk !== undefined && 
+        data.skuetiquetados !== undefined;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const saveToCache = useCallback((data, timestamp, duration) => {
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
@@ -55,17 +68,18 @@ const DashboardEtiquetas = ({ filial }) => {
       const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
       const cachedDuration = localStorage.getItem(CACHE_DURATION_KEY);
 
-      if (cachedData && cachedTimestamp) {
+      if (cachedData && cachedTimestamp && isValidCache(cachedData)) { // Adicionada verificação
         setStats(JSON.parse(cachedData));
         setLastUpdate(new Date(cachedTimestamp));
         setLastUpdateDuration(parseFloat(cachedDuration));
         setLoading(false);
         return true;
       }
+      return false;
     } catch (error) {
       console.error('Erro ao carregar cache:', error);
+      return false;
     }
-    return false;
   }, [CACHE_KEY, CACHE_TIMESTAMP_KEY, CACHE_DURATION_KEY]);
 
   const clearLoadingTimer = useCallback(() => {
@@ -89,7 +103,10 @@ const DashboardEtiquetas = ({ filial }) => {
         produtosEtiquetados: data.produtosEtiquetados || 0,
         produtosSemEtiqueta: data.produtosSemEtiqueta || 0,
         produtosMultiplasEtiquetas: data.produtosMultiplasEtiquetas || 0,
-        etiquetasDuplicadas: data.etiquetasDuplicadas || 0
+        etiquetasDuplicadas: data.etiquetasDuplicadas || 0,
+        emStkSemEtiq: parseInt(data.emStkSemEtiq) || 0,
+        bindSemStk: parseInt(data.bindSemStk) || 0,
+        skuetiquetados: parseInt(data.skuetiquetados) || 0
       };
 
       const endTime = Date.now();
@@ -166,18 +183,18 @@ const DashboardEtiquetas = ({ filial }) => {
   const chartData = [
     {
       name: 'Etiquetados',
-      value: stats.produtosEtiquetados - stats.produtosMultiplasEtiquetas,
-      percentual: ((stats.produtosEtiquetados - stats.produtosMultiplasEtiquetas) / stats.totalEstoque * 100).toFixed(1)
+      value: stats.produtosEtiquetados - stats.etiquetasDuplicadas,
+      percentual: ((stats.produtosEtiquetados - stats.produtosMultiplasEtiquetas) / stats.skuetiquetados * 100).toFixed(1)
     },
     {
-      name: 'Múltiplas Etiquetas',
-      value: stats.produtosMultiplasEtiquetas,
-      percentual: (stats.produtosMultiplasEtiquetas / stats.totalEstoque * 100).toFixed(1)
+      name: 'Etiquetas em Duplicidade',
+      value: stats.etiquetasDuplicadas,
+      percentual: (stats.produtosMultiplasEtiquetas / stats.skuetiquetados * 100).toFixed(1)
     },
     {
-      name: 'Sem Etiqueta',
-      value: stats.produtosSemEtiqueta,
-      percentual: (stats.produtosSemEtiqueta / stats.totalEstoque * 100).toFixed(1)
+      name: 'Bind sem Stk',
+      value: stats.bindSemStk,
+      percentual: (stats.bindSemStk / stats.skuetiquetados * 100).toFixed(1)
     }
   ];
 
@@ -229,7 +246,7 @@ const DashboardEtiquetas = ({ filial }) => {
                   <div className="bg-white p-4 rounded-2xl shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <Tags className="h-5 w-5 text-green-500" />
-                      <p className="text-sm font-medium text-gray-500 font-allotrope">Produtos Etiquetados</p>
+                      <p className="text-sm font-medium text-gray-500 font-allotrope">Etiquetas em Uso</p>
                     </div>
                     <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.produtosEtiquetados.toLocaleString()}</p>
                     <p className="text-xs md:text-sm text-gray-500 mt-1">
@@ -242,15 +259,15 @@ const DashboardEtiquetas = ({ filial }) => {
                       <AlertCircle className="h-5 w-5 text-red-500" />
                       <p className="text-sm font-medium text-gray-500 font-allotrope">Pendentes</p>
                     </div>
-                    <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.produtosSemEtiqueta.toLocaleString()}</p>
+                    <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.emStkSemEtiq.toLocaleString()}</p>
                     <p className="text-xs md:text-sm text-gray-500 mt-1">
-                      {(stats.produtosSemEtiqueta / stats.totalEstoque * 100).toFixed(1)}% do total
+                      {(stats.emStkSemEtiq / stats.totalEstoque * 100).toFixed(1)}% do total
                     </p>
                   </div>
                 </div>
         
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm h-[400px]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white p-4 rounded-2xl shadow-sm h-[530px] col-span-2">
                     <div className="flex items-center gap-2 mb-4">
                       <BarChart2 className="h-5 w-5 text-blue-500" />
                       <h2 className="text-base md:text-lg font-medium text-gray-900 font-allotrope">Distribuição de Etiquetas</h2>
@@ -272,6 +289,10 @@ const DashboardEtiquetas = ({ filial }) => {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#666', fontSize: 12 }}
+                            scale="log" // Adiciona escala logarítmica
+                            domain={[10, 'auto']} // Ajusta o domínio automaticamente
+                            allowDataOverflow={false} // Permite que os dados excedam o domínio
+                            tickFormatter={(value) => value.toLocaleString()} // Formata os números no eixo
                           />
                           <Tooltip
                             contentStyle={{
@@ -286,6 +307,9 @@ const DashboardEtiquetas = ({ filial }) => {
                             fill="#FF1800"
                             radius={[4, 4, 0, 0]}
                           >
+                             <Cell fill="#34C759" /> {/* Etiquetados */}
+                             <Cell fill="#d6da09" /> {/* Múltiplas Etiquetas */}
+                             <Cell fill="#ff0022" /> {/* Bind sem Stk */}
                             <LabelList 
                               content={<CustomLabel />}
                               position="top"
@@ -297,42 +321,88 @@ const DashboardEtiquetas = ({ filial }) => {
                     </div>
                   </div>
         
-                  <div className="bg-white p-4 rounded-2xl shadow-sm h-[400px]">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Info className="h-5 w-5 text-blue-500" />
-                      <h2 className="text-base md:text-lg font-medium text-gray-900 font-allotrope">Detalhes Adicionais</h2>
-                    </div>
-                    <div className="space-y-6 h-[calc(100%-2rem)] flex flex-col justify-center">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Tags className="h-4 w-4 text-orange-500" />
-                          <p className="text-xs md:text-sm font-medium text-gray-500">
-                            Produtos com Múltiplas Etiquetas
-                          </p>
-                        </div>
-                        <p className="text-2xl md:text-3xl font-medium text-gray-900">
-                          {stats.produtosMultiplasEtiquetas.toLocaleString()}
-                        </p>
-                        <p className="text-xs md:text-sm text-gray-500 mt-1">
-                          {(stats.produtosMultiplasEtiquetas / stats.totalEstoque * 100).toFixed(1)}% do total
-                        </p>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <AlertCircle className="h-4 w-4 text-yellow-500" />
-                          <p className="text-xs md:text-sm font-medium text-gray-500">
-                            Etiquetas Duplicadas/Triplicadas
-                          </p>
-                        </div>
-                        <p className="text-2xl md:text-3xl font-medium text-gray-900">
-                          {stats.etiquetasDuplicadas.toLocaleString()}
-                        </p>
-                        <p className="text-xs md:text-sm text-gray-500 mt-1">
-                          {(stats.etiquetasDuplicadas / stats.totalEstoque * 100).toFixed(1)}% do total em etiquetas extras
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+<div className="bg-white p-4 rounded-2xl shadow-sm h-[530px] overflow-y-auto">
+  <div className="flex items-center gap-2 mb-4">
+    <Info className="h-5 w-5 text-blue-500" />
+    <h2 className="text-base md:text-lg font-medium text-gray-900">Detalhes Adicionais</h2>
+  </div>
+  <div className="space-y-6">
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <Tags className="h-4 w-4 text-orange-500" />
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          Produtos com Múltiplas Etiquetas
+        </p>
+      </div>
+      <p className="text-2xl md:text-3xl font-medium text-gray-900">
+        {stats.produtosMultiplasEtiquetas.toLocaleString()}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        {(stats.produtosMultiplasEtiquetas / stats.totalEstoque * 100).toFixed(1)}% do total
+      </p>
+    </div>
+
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <AlertCircle className="h-4 w-4 text-yellow-500" />
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          Etiquetas Duplicadas/Triplicadas
+        </p>
+      </div>
+      <p className="text-2xl md:text-3xl font-medium text-gray-900">
+        {stats.etiquetasDuplicadas.toLocaleString()}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        {(stats.etiquetasDuplicadas / stats.totalEstoque * 100).toFixed(1)}% do total em etiquetas extras
+      </p>
+    </div>
+
+    {/* <div>
+      <div className="flex items-center gap-2 mb-1">
+        <Package className="h-4 w-4 text-purple-500" />
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          Em Estoque Sem Etiqueta
+        </p>
+      </div>
+      <p className="text-2xl md:text-3xl font-medium text-gray-900">
+        {stats.emStkSemEtiq.toLocaleString()}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        {(stats.emStkSemEtiq / stats.totalEstoque * 100).toFixed(1)}% do total em estoque
+      </p>
+    </div> */}
+
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <AlertTriangle className="h-4 w-4 text-red-500" />
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          Bind Sem Estoque
+        </p>
+      </div>
+      <p className="text-2xl md:text-3xl font-medium text-gray-900">
+        {stats.bindSemStk.toLocaleString()}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        Produtos vinculados sem estoque
+      </p>
+    </div>
+
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <Barcode className="h-4 w-4 text-green-500" />
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          SKUs Etiquetados
+        </p>
+      </div>
+      <p className="text-2xl md:text-3xl font-medium text-gray-900">
+        {stats.skuetiquetados.toLocaleString()}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        Total de SKUs com etiquetas
+      </p>
+    </div>
+  </div>
+</div>
                 </div>
         
                 <div className="text-center text-xs md:text-sm text-gray-500 mt-1">
