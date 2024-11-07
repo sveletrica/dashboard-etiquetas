@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart as BarChartRecharts, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import { 
   Package, 
@@ -30,6 +31,7 @@ const formatLastUpdate = (date) => {
 };
 
 const DashboardEtiquetas = ({ filial }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -254,16 +256,24 @@ const DashboardEtiquetas = ({ filial }) => {
                     </p>
                   </div>
         
-                  <div className="bg-white p-4 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                      <p className="text-sm font-medium text-gray-500 font-allotrope">Em Stk sem etiqueta</p>
-                    </div>
-                    <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.emStkSemEtiq.toLocaleString()}</p>
-                    <p className="text-xs md:text-sm text-gray-500 mt-1">
+                <div className="bg-white p-4 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <p className="text-sm font-medium text-gray-500 font-allotrope">Em Stk sem etiqueta</p>
+                  </div>
+                  <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.emStkSemEtiq.toLocaleString()}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs md:text-sm text-gray-500">
                       {(stats.emStkSemEtiq / stats.totalEstoque * 100).toFixed(1)}% do total
                     </p>
+                    <button
+                      onClick={() => navigate(`/itens-sem-etiqueta/${filial.id}`)}
+                      className="text-xs md:text-sm text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Ver detalhes →
+                    </button>
                   </div>
+                </div>
                 </div>
         
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
