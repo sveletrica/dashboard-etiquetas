@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     useReactTable,
     getCoreRowModel,
@@ -7,7 +7,7 @@ import {
     flexRender,
     getFilteredRowModel,
 } from '@tanstack/react-table';
-import { Download, ArrowLeft, Search } from 'lucide-react';
+import { Download, ArrowLeft, Search, RotateCw } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
@@ -15,48 +15,117 @@ import toast from 'react-hot-toast';
 const ItensSemEtiqueta = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingProgress, setLoadingProgress] = useState(0);
     const [globalFilter, setGlobalFilter] = useState('');
     const navigate = useNavigate();
     const { filialId } = useParams();
 
-    const columns = [
-        {
-            header: 'Código',
-            accessorKey: 'codigo',
-            cell: (info) => info.getValue(),
-        },
-        {
-            header: 'Produto',
-            accessorKey: 'nome',
-            cell: (info) => info.getValue(),
-        },
-        {
-            header: 'Estoque',
-            accessorKey: 'estoque',
-            cell: (info) => info.getValue().toLocaleString(),
-        },
-    ];
+    // Cache keys
+    const CACHE_KEY = `items_sem_etiqueta_${filialId}`;
+    const CACHE_TIMESTAMP_KEY = `items_sem_etiqueta_timestamp_${filialId}`;
+
+    // Definição das colunas
+    const columns = React.useMemo(
+        () => [
+            {
+                header: 'Código',
+                accessorKey: 'codigo',
+                cell: (info) => info.getValue(),
+            },
+            {
+                header: 'Produto',
+                accessorKey: 'nome',
+                cell: (info) => info.getValue(),
+            },
+            {
+                header: 'Estoque',
+                accessorKey: 'estoque',
+                cell: (info) => info.getValue().toLocaleString(),
+            },
+        ],
+        []
+    );
+
+    const loadFromCache = useCallback(() => {
+        try {
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            const cachedTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+
+            if (cachedData && cachedTimestamp) {
+                const timestamp = new Date(cachedTimestamp);
+                const now = new Date();
+                const diffInHours = (now - timestamp) / (1000 * 60 * 60);
+
+                if (diffInHours < 1) {
+                    setData(JSON.parse(cachedData));
+                    setLoading(false);
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Erro ao carregar cache:', error);
+            return false;
+        }
+    }, [CACHE_KEY, CACHE_TIMESTAMP_KEY]);
+
+    const saveToCache = useCallback((data) => {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_TIMESTAMP_KEY, new Date().toISOString());
+        } catch (error) {
+            console.error('Erro ao salvar cache:', error);
+        }
+    }, [CACHE_KEY, CACHE_TIMESTAMP_KEY]);
+
+    const simulateProgress = () => {
+        setLoadingProgress(0);
+        const interval = setInterval(() => {
+            setLoadingProgress(prev => {
+                if (prev >= 90) {
+                    clearInterval(interval);
+                    return 90;
+                }
+                return prev + 1;
+            });
+        }, 250);
+        return interval;
+    };
+
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const progressInterval = simulateProgress();
+
+            const response = await fetch(`https://n8n.sveletrica.com/webhook/items-sem-etiqueta/${filialId}`);
+            if (!response.ok) throw new Error('Erro ao carregar dados');
+            const jsonData = await response.json();
+
+            clearInterval(progressInterval);
+            setLoadingProgress(100);
+
+            setData(jsonData);
+            saveToCache(jsonData);
+
+            setTimeout(() => {
+                setLoading(false);
+                setLoadingProgress(0);
+            }, 500);
+
+        } catch (error) {
+            toast.error('Erro ao carregar dados');
+            console.error(error);
+            setLoading(false);
+            setLoadingProgress(0);
+        }
+    }, [filialId, saveToCache]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                // Exemplo de URL do webhook - ajuste conforme necessário
-                const response = await fetch(`https://n8n.sveletrica.com/webhook/items-sem-etiqueta/${filialId}`);
-                if (!response.ok) throw new Error('Erro ao carregar dados');
-                const jsonData = await response.json();
-                // Como o JSON já vem como array, podemos usar diretamente
-                setData(jsonData);
-            } catch (error) {
-                toast.error('Erro ao carregar dados');
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [filialId]);
+        const hasCache = loadFromCache();
+        if (!hasCache) {
+            fetchData();
+        }
+    }, [loadFromCache, fetchData]);
 
     const table = useReactTable({
         data,
@@ -71,14 +140,13 @@ const ItensSemEtiqueta = () => {
         onGlobalFilterChange: setGlobalFilter,
         initialState: {
             pagination: {
-                pageSize: 10, // Define quantos itens por página
+                pageSize: 10,
             },
         },
     });
 
     const exportToExcel = () => {
         try {
-            // Preparar os dados para exportação
             const exportData = data.map(item => ({
                 'Código': item.codigo,
                 'Produto': item.nome,
@@ -89,12 +157,11 @@ const ItensSemEtiqueta = () => {
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Itens Sem Etiqueta");
 
-            // Ajustar largura das colunas
             const maxWidth = exportData.reduce((w, r) => Math.max(w, r.Produto.length), 10);
             worksheet['!cols'] = [
-                { wch: 10 }, // Código
-                { wch: maxWidth }, // Produto
-                { wch: 10 }, // Estoque
+                { wch: 10 },
+                { wch: maxWidth },
+                { wch: 10 },
             ];
 
             XLSX.writeFile(workbook, `itens-sem-etiqueta-${filialId}-${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -108,7 +175,19 @@ const ItensSemEtiqueta = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-md">
+                    <div className="text-center mb-4">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
+                        <p className="text-gray-600 mt-4">Carregando itens sem etiqueta...</p>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div
+                            className="bg-red-500 h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${loadingProgress}%` }}
+                        ></div>
+                    </div>
+                    <p className="text-center text-sm text-gray-500">{loadingProgress}%</p>
+                </div>
             </div>
         );
     }
@@ -135,6 +214,14 @@ const ItensSemEtiqueta = () => {
                                 placeholder="Buscar..."
                             />
                         </div>
+                        <button
+                            onClick={fetchData}
+                            disabled={loading}
+                            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 w-full sm:w-auto justify-center disabled:opacity-50"
+                        >
+                            <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            Atualizar
+                        </button>
                         <button
                             onClick={exportToExcel}
                             className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 w-full sm:w-auto justify-center"
@@ -232,6 +319,11 @@ const ItensSemEtiqueta = () => {
                                 | Total: {data.length} itens
                             </span>
                         </div>
+                    </div>
+                    <div className="text-center text-xs text-gray-500 mt-4">
+                        Última atualização: {new Date(localStorage.getItem(CACHE_TIMESTAMP_KEY)).toLocaleString('pt-BR', {
+                            timeZone: 'America/Sao_Paulo'
+                        })}
                     </div>
                 </div>
             </div>
