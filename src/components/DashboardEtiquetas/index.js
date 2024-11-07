@@ -240,7 +240,7 @@ const DashboardEtiquetas = ({ filial }) => {
                       <p className="text-sm font-medium text-gray-500 font-allotrope">Total em Estoque</p>
                     </div>
                     <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.totalEstoque.toLocaleString()}</p>
-                    <p className="text-xs md:text-sm text-gray-500 mt-1">produtos cadastrados</p>
+                    <p className="text-xs md:text-sm text-gray-500 mt-1">produtos em stk no ERP</p>
                   </div>
         
                   <div className="bg-white p-4 rounded-2xl shadow-sm">
@@ -257,7 +257,7 @@ const DashboardEtiquetas = ({ filial }) => {
                   <div className="bg-white p-4 rounded-2xl shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertCircle className="h-5 w-5 text-red-500" />
-                      <p className="text-sm font-medium text-gray-500 font-allotrope">Pendentes</p>
+                      <p className="text-sm font-medium text-gray-500 font-allotrope">Em Stk sem etiqueta</p>
                     </div>
                     <p className="text-2xl md:text-3xl font-medium text-gray-900">{stats.emStkSemEtiq.toLocaleString()}</p>
                     <p className="text-xs md:text-sm text-gray-500 mt-1">
