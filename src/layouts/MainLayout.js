@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Home, FileText, Menu, X } from 'lucide-react';
+import { Building2, Home, FileText, Menu, X, Search } from 'lucide-react';
 
 const MainLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -8,7 +8,7 @@ const MainLayout = ({ children }) => {
 
   const navigation = [
     { name: 'Início', href: '/', icon: Home },
-    { 
+    {
       name: 'Filiais',
       icon: Building2,
       isSubmenu: true,
@@ -17,6 +17,11 @@ const MainLayout = ({ children }) => {
         { name: 'Maracanaú', href: '/maracanau', icon: Building2 },
         { name: 'Caucaia', href: '/caucaia', icon: Building2 },
       ]
+    },
+    {
+      name: 'Consulta de Estoque',
+      href: '/consulta-estoque',
+      icon: Search,
     },
     { name: 'Relatórios', href: '/reports', icon: FileText },
   ];
@@ -39,19 +44,17 @@ const MainLayout = ({ children }) => {
               <Link
                 key={child.name}
                 to={child.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                  location.pathname === child.href
+                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${location.pathname === child.href
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                  }`}
                 onClick={() => setIsSidebarOpen(false)}
               >
-                <Building2 
-                  className={`mr-3 h-6 w-6 ${
-                    location.pathname === child.href 
-                      ? 'text-blue-500' 
+                <Building2
+                  className={`mr-3 h-6 w-6 ${location.pathname === child.href
+                      ? 'text-blue-500'
                       : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
+                    }`}
                 />
                 {child.name}
               </Link>
@@ -65,17 +68,15 @@ const MainLayout = ({ children }) => {
       <Link
         key={item.name}
         to={item.href}
-        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-          isActive
+        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive
             ? 'bg-gray-100 text-gray-900'
             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-        }`}
+          }`}
         onClick={() => setIsSidebarOpen(false)}
       >
         <ItemIcon
-          className={`mr-3 h-6 w-6 ${
-            isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-          }`}
+          className={`mr-3 h-6 w-6 ${isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+            }`}
         />
         {item.name}
       </Link>
@@ -88,18 +89,15 @@ const MainLayout = ({ children }) => {
       <div className="lg:hidden">
         <div className={`fixed inset-0 flex z-40 ${isSidebarOpen ? '' : 'pointer-events-none'}`}>
           <div
-            className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity duration-300 ease-in-out ${
-              isSidebarOpen ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity duration-300 ease-in-out ${isSidebarOpen ? 'opacity-100' : 'opacity-0'
+              }`}
             onClick={() => setIsSidebarOpen(false)}
           />
 
           <div
-            className={`relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white transition-transform duration-300 ease-in-out transform ${
-              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white transition-transform duration-300 ease-in-out transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
           >
-            {/* Botão X - Modificar esta parte */}
             <div className={`absolute top-0 right-0 -mr-12 pt-2 ${isSidebarOpen ? 'block' : 'hidden'}`}>
               <button
                 className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"

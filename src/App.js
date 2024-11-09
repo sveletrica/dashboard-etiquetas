@@ -7,6 +7,7 @@ import MaracanauPage from './pages/Maracanau';
 import CaucaiaPage from './pages/Caucaia';
 import ReportsPage from './pages/Reports';
 import ItensSemEtiqueta from './pages/ItensSemEtiqueta';
+import ConsultaEstoque from './pages/ConsultaEstoque';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/itens-sem-etiqueta/:filialId" element={<ItensSemEtiqueta />} />
+          <Route path="/consulta-estoque" element={<ConsultaEstoque />} />
         </Routes>
       </MainLayout>
     </Router>

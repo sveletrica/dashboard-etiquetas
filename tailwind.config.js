@@ -11,4 +11,12 @@ module.exports = {
     },
   },
   plugins: [],
-}
+  extend: {
+    backgroundColor: {
+      'highlight': '#fff3cd',
+    },
+    textColor: {
+      'highlight': '#856404',
+    },
+  },
+};
