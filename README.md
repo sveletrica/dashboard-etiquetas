@@ -1,16 +1,17 @@
 # Dashboard de Etiquetas - SV Elétrica
 
-Dashboard para monitoramento de etiquetas de produtos nas filiais da SV Elétrica, desenvolvido com React e Tailwind CSS.
+Dashboard para monitoramento de etiquetas de produtos e consulta de estoque nas filiais da SV Elétrica, desenvolvido com React e Tailwind CSS.
 
 ## Funcionalidades
 
 - Visualização em tempo real do status das etiquetas
 - Suporte para múltiplas filiais (Sobral, Maracanaú, Caucaia)
-- Gráficos de distribuição
+- Gráficos de distribuição de etiquetas
 - Métricas detalhadas por filial
-- Cache local para melhor performance
+- Sistema de cache local para melhor performance
+- Consulta avançada de estoque com filtros e exportação
 - Interface responsiva
-- Design moderno e intuitivo
+- Design moderno e intuitivo com fonte personalizada Allotrope
 
 ## Tecnologias Utilizadas
 
@@ -19,6 +20,10 @@ Dashboard para monitoramento de etiquetas de produtos nas filiais da SV Elétric
 - React Router Dom
 - Recharts (gráficos)
 - Lucide React (ícones)
+- TanStack Table (tabelas)
+- React Hot Toast (notificações)
+- XLSX (exportação para Excel)
+- PrimeReact (componentes UI)
 
 ## Pré-requisitos
 
@@ -53,19 +58,45 @@ O projeto estará disponível em `http://localhost:3000`
 
 ```
 src/
-  ├── components/     # Componentes reutilizáveis
+  ├── components/          # Componentes reutilizáveis
   │   └── DashboardEtiquetas/  # Componente principal do dashboard
-  ├── config/        # Configurações
-  │   └── filiais.js # Configuração das filiais
-  ├── layouts/       # Layouts compartilhados
-  │   └── MainLayout.js
-  ├── pages/         # Páginas da aplicação
-  │   ├── Home/
-  │   ├── Sobral/
-  │   ├── Maracanau/
-  │   └── Caucaia/
-  ├── App.js
-  └── index.js
+  │
+  ├── config/             # Configurações
+  │   └── filiais.js      # Configuração das filiais
+  │
+  ├── layouts/            # Layouts compartilhados
+  │   └── MainLayout.js   # Layout principal com sidebar
+  │
+  ├── pages/              # Páginas da aplicação
+  │   ├── Home/           # Página inicial
+  │   ├── Sobral/        # Dashboard Sobral
+  │   ├── Maracanau/     # Dashboard Maracanaú
+  │   ├── Caucaia/       # Dashboard Caucaia
+  │   ├── Reports/       # Página de relatórios
+  │   ├── ItensSemEtiqueta/  # Listagem de itens sem etiqueta
+  │   └── ConsultaEstoque/   # Sistema de consulta de estoque
+  │       ├── components/    # Componentes da consulta
+  │       │   ├── LoadingState.js
+  │       │   ├── TableHeader.js
+  │       │   └── TableColumns.js
+  │       ├── hooks/        # Hooks personalizados
+  │       │   ├── useTableData.js
+  │       │   └── useExportData.js
+  │       └── utils/        # Utilitários
+  │           ├── constants.js
+  │           └── tableHelpers.js
+  │
+  ├── styles/             # Estilos globais
+  │   ├── index.css      # Estilos Tailwind e fonte Allotrope
+  │   └── App.css        # Estilos específicos da aplicação
+  │
+  ├── App.js             # Componente principal e rotas
+  └── index.js           # Ponto de entrada da aplicação
+
+public/                  # Arquivos públicos
+  ├── index.html         # HTML principal
+  ├── manifest.json      # Manifesto PWA
+  └── robots.txt         # Configurações para crawlers
 ```
 
 ## Configuração
@@ -124,3 +155,16 @@ Para suporte, entre em contato com a equipe de desenvolvimento da SV Elétrica.
 ## Status do Projeto
 
 Em desenvolvimento ativo 🚀
+
+## Configuração do Ambiente
+
+1. Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Ajuste as variáveis de ambiente no arquivo `.env` conforme necessário:
+```env
+REACT_APP_API_BASE_URL=https://sua-api.com
+# ... outras variáveis
+```

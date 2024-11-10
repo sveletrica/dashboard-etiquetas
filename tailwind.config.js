@@ -7,16 +7,18 @@ module.exports = {
     extend: {
       fontFamily: {
         'allotrope': ['allotrope', 'sans-serif']
+      },
+      keyframes: {
+        'scale-in': {
+          '0%': { transform: 'scale(0)' },
+          '50%': { transform: 'scale(1.2)' },
+          '100%': { transform: 'scale(1)' }
+        }
+      },
+      animation: {
+        'scale-in': 'scale-in 0.3s ease-in-out'
       }
     },
   },
   plugins: [],
-  extend: {
-    backgroundColor: {
-      'highlight': '#fff3cd',
-    },
-    textColor: {
-      'highlight': '#856404',
-    },
-  },
 };

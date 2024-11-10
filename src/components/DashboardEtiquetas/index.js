@@ -9,7 +9,8 @@ import {
   Info, 
   RotateCw,
   AlertTriangle,
-  Barcode
+  Barcode,
+  Check
 } from 'lucide-react';
 
 // Função auxiliar para formatar data
@@ -38,6 +39,11 @@ const DashboardEtiquetas = ({ filial }) => {
   const [loadingTime, setLoadingTime] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [lastUpdateDuration, setLastUpdateDuration] = useState(null);
+  const [updateProgress, setUpdateProgress] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const TOTAL_UPDATE_TIME = 25000; // 25 segundos em milissegundos
+  const UPDATE_INTERVAL = 100; // Atualiza a cada 100ms para animação suave
+  const SUCCESS_ANIMATION_DURATION = 1000; // 1 segundo para a animação de sucesso
 
   const CACHE_KEY = `dashboard_etiquetas_cache_${filial.id}`;
   const CACHE_TIMESTAMP_KEY = `dashboard_etiquetas_last_update_${filial.id}`;
@@ -88,11 +94,34 @@ const DashboardEtiquetas = ({ filial }) => {
     setLoadingTime(0);
   }, []);
 
+  // Função para gerenciar a animação de progresso
+  const startUpdateAnimation = useCallback(() => {
+    setUpdateProgress(0);
+    const startTime = Date.now();
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = (elapsed / TOTAL_UPDATE_TIME) * 100;
+      
+      if (progress >= 100) {
+        clearInterval(interval);
+        setUpdateProgress(0);
+      } else {
+        setUpdateProgress(progress);
+      }
+    }, UPDATE_INTERVAL);
+
+    return interval;
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setLoadingTime(0);
       const startTime = Date.now();
+
+      // Inicia a animação de progresso
+      const progressInterval = startUpdateAnimation();
 
       const response = await fetch(filial.webhook);
       if (!response.ok) {
@@ -122,13 +151,26 @@ const DashboardEtiquetas = ({ filial }) => {
 
       saveToCache(processedData, timestamp, duration);
 
+      // Limpa o intervalo da animação quando os dados chegarem
+      clearInterval(progressInterval);
+      setUpdateProgress(100);
+      setShowSuccess(true);
+      
+      // Timer para remover a animação de sucesso
+      setTimeout(() => {
+        setShowSuccess(false);
+        setUpdateProgress(0);
+      }, SUCCESS_ANIMATION_DURATION);
+
     } catch (err) {
       setError(err.message);
+      setUpdateProgress(0);
+      setShowSuccess(false);
     } finally {
       setLoading(false);
       clearLoadingTimer();
     }
-  }, [filial.webhook, saveToCache, clearLoadingTimer]);
+  }, [filial.webhook, saveToCache, clearLoadingTimer, startUpdateAnimation]);
 
   useEffect(() => {
     const hasCache = loadFromCache();
@@ -228,10 +270,34 @@ const DashboardEtiquetas = ({ filial }) => {
                   <button
                     onClick={fetchData}
                     disabled={loading}
-                    className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
+                    className={`relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 w-full sm:w-auto justify-center overflow-hidden
+                      ${showSuccess 
+                        ? 'bg-green-500 hover:bg-green-600' 
+                        : 'bg-red-500 hover:bg-red-800'
+                      } 
+                      text-white disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    {loading ? `Atualizando... (${loadingTime}s)` : 'Atualizar dados'}
+                    {/* Barra de progresso */}
+                    <div
+                      className={`absolute left-0 top-0 bottom-0 transition-all duration-100 ease-linear
+                        ${showSuccess ? 'bg-green-600' : 'bg-red-800'}`}
+                      style={{ width: `${updateProgress}%` }}
+                    />
+                    
+                    {/* Conteúdo do botão */}
+                    <div className="relative z-10 flex items-center gap-2">
+                      {showSuccess ? (
+                        <Check className="h-4 w-4 animate-[scale-in_0.3s_ease-in-out]" />
+                      ) : (
+                        <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                      )}
+                      {loading 
+                        ? `Atualizando... (${loadingTime}s)` 
+                        : showSuccess 
+                          ? 'Atualizado!'
+                          : 'Atualizar dados'
+                      }
+                    </div>
                   </button>
                 </div>
         

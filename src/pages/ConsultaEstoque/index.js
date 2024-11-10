@@ -163,7 +163,7 @@ const ConsultaEstoque = () => {
     data,
     loading,
     loadingProgress,
-    lastUpdate,
+    lastUpdateEstoque,
     fetchData: originalFetchData,
   } = useTableData();
 
@@ -240,7 +240,7 @@ const ConsultaEstoque = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="p-4 md:p-6 max-w-[1920px] mx-auto flex-grow flex flex-col">
           <TableHeader
-            lastUpdate={lastUpdate}
+            lastUpdate={lastUpdateEstoque}
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
             loading={loading}

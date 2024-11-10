@@ -6,7 +6,7 @@ export const useTableData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [lastUpdate, setLastUpdate] = useState(null);
+  const [lastUpdateEstoque, setLastUpdateEstoque] = useState(null);
 
   const loadFromCache = useCallback(() => {
     try {
@@ -27,7 +27,7 @@ export const useTableData = () => {
           });
           
           setData(parsedData.data);
-          setLastUpdate(parsedData.lastUpdate);
+          setLastUpdateEstoque(parsedData.lastUpdate);
           setLoading(false);
           return true;
         } else {
@@ -147,7 +147,7 @@ export const useTableData = () => {
         setLoadingProgress(100);
 
         setData(formattedData);
-        setLastUpdate(jsonData[0]?.Atualizacao || new Date().toISOString());
+        setLastUpdateEstoque(jsonData[0]?.Atualizacao || new Date().toISOString());
         saveToCache(formattedData, jsonData[0]?.Atualizacao);
 
         toast.success(`${ formattedData.length } registros carregados`);
@@ -184,7 +184,7 @@ export const useTableData = () => {
     data,
     loading,
     loadingProgress,
-    lastUpdate,
+    lastUpdateEstoque,
     fetchData: () => fetchData(true), // Força refresh ao chamar manualmente
     isLoading: loading,
     progress: loadingProgress,
