@@ -31,6 +31,21 @@ const formatLastUpdate = (date) => {
   return date.toLocaleString('pt-BR', options);
 };
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // 1024px is the 'lg' breakpoint
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isMobile;
+};
+
 const DashboardEtiquetas = ({ filial }) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
@@ -193,6 +208,8 @@ const DashboardEtiquetas = ({ filial }) => {
     };
   }, [loading]);
 
+  const isMobile = useIsMobile();
+
   if (loading && !stats) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -343,23 +360,58 @@ const DashboardEtiquetas = ({ filial }) => {
                 </div>
         
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm h-[530px] col-span-2">
+                  <div className="bg-white p-4 rounded-2xl shadow-sm h-[400px] lg:h-[530px] col-span-2">
                     <div className="flex items-center gap-2 mb-4">
                       <BarChart2 className="h-5 w-5 text-blue-500" />
                       <h2 className="text-base md:text-lg font-medium text-gray-900 font-allotrope">Distribuição de Etiquetas</h2>
                     </div>
                     <div className="h-[calc(100%-2rem)]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChartRecharts data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 20 }}>
+                        <BarChartRecharts data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: isMobile ? 40 : 20 }}>
                           <XAxis
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#666', fontSize: 12 }}
-                            height={50}
+                            tick={(props) => {
+                              const { x, y, payload } = props;
+                              
+                              if (isMobile) {
+                                const words = payload.value.split(' ');
+                                return (
+                                  <g transform={`translate(${x},${y + 10})`}>
+                                    {words.map((word, index) => (
+                                      <text
+                                        key={index}
+                                        x={0}
+                                        y={index * 10}
+                                        dy={0}
+                                        textAnchor="middle"
+                                        fill="#666"
+                                        fontSize={12}
+                                      >
+                                        {word}
+                                      </text>
+                                    ))}
+                                  </g>
+                                );
+                              }
+                              
+                              // Desktop version
+                              return (
+                                <text
+                                  x={x}
+                                  y={y}
+                                  dy={16}
+                                  textAnchor="middle"
+                                  fill="#666"
+                                  fontSize={12}
+                                >
+                                  {payload.value}
+                                </text>
+                              );
+                            }}
+                            height={isMobile ? 10 : 30}
                             interval={0}
-                            //angle={-45}
-                            //textAnchor="end"
                           />
                           <YAxis
                             axisLine={false}
