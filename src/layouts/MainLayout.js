@@ -48,7 +48,7 @@ const MainLayout = ({ children }) => {
       <div className="flex h-16 items-center border-b px-3">
         <Button
           variant="ghost"
-          className="w-full flex items-center justify-start gap-2 font-allotrope hover:bg-transparent"
+          className="w-full flex items-center justify-end gap-2 font-allotrope hover:bg-transparent"
           onClick={() => {
             navigate('/');
             setIsMobileMenuOpen(false);
