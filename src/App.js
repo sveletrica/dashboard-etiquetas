@@ -19,9 +19,9 @@ function App() {
           <Route path="/maracanau" element={<MaracanauPage />} />
           <Route path="/caucaia" element={<CaucaiaPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/itens-sem-etiqueta/:filialId" element={<ItensSemEtiqueta />} />
           <Route path="/consulta-estoque" element={<ConsultaEstoque />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </MainLayout>
     </Router>

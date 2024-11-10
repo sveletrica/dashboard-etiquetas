@@ -1,168 +1,162 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Building2, Home, FileText, Menu, X, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { cn } from "../lib/utils";
+import { Button } from "../components/ui/button";
+import {
+  BarChart2,
+  Search,
+  AlertTriangle,
+  FileText,
+  Menu,
+  X
+} from "lucide-react";
 
 const MainLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Início', href: '/', icon: Home },
+  const sidebarItems = [
     {
-      name: 'Filiais',
-      icon: Building2,
-      isSubmenu: true,
-      children: [
-        { name: 'Sobral', href: '/sobral', icon: Building2 },
-        { name: 'Maracanaú', href: '/maracanau', icon: Building2 },
-        { name: 'Caucaia', href: '/caucaia', icon: Building2 },
-      ]
+      title: "Dashboards",
+      icon: BarChart2,
+      submenu: [
+        { name: "Sobral", path: "/sobral" },
+        { name: "Maracanaú", path: "/maracanau" },
+        { name: "Caucaia", path: "/caucaia" },
+      ],
     },
     {
-      name: 'Consulta de Estoque',
-      href: '/consulta-estoque',
+      title: "Consulta de Estoque",
       icon: Search,
+      path: "/consulta-estoque",
     },
-    { name: 'Relatórios', href: '/reports', icon: FileText },
+    {
+      title: "Itens Sem Etiqueta",
+      icon: AlertTriangle,
+      path: "/itens-sem-etiqueta",
+    },
+    {
+      title: "Relatórios",
+      icon: FileText,
+      path: "/reports",
+    },
   ];
 
-  const renderNavItem = (item) => {
-    const isActive = location.pathname === item.href;
-    const ItemIcon = item.icon;
-
-    if (item.isSubmenu) {
-      return (
-        <div key={item.name} className="space-y-1">
-          <div className="px-2 py-2 text-sm font-medium text-gray-600">
-            <div className="flex items-center">
-              <ItemIcon className="mr-3 h-6 w-6 text-gray-400" />
-              {item.name}
-            </div>
-          </div>
-          <div className="pl-4 space-y-1">
-            {item.children.map((child) => (
-              <Link
-                key={child.name}
-                to={child.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${location.pathname === child.href
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <Building2
-                  className={`mr-3 h-6 w-6 ${location.pathname === child.href
-                      ? 'text-blue-500'
-                      : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
-                />
-                {child.name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <Link
-        key={item.name}
-        to={item.href}
-        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive
-            ? 'bg-gray-100 text-gray-900'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-          }`}
-        onClick={() => setIsSidebarOpen(false)}
-      >
-        <ItemIcon
-          className={`mr-3 h-6 w-6 ${isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-            }`}
-        />
-        {item.name}
-      </Link>
-    );
-  };
+  const Sidebar = () => (
+    <div className="flex h-full flex-col">
+      <div className="flex h-20 items-center border-b px-4">
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start gap-2 font-allotrope hover:bg-transparent"
+          onClick={() => {
+            navigate('/');
+            setIsMobileMenuOpen(false);
+          }}
+        >
+          <img 
+            src="/logo-sv.png" 
+            alt="SV Elétrica Logo" 
+            className="h-12 w-auto"
+          />
+        </Button>
+      </div>
+      <div className="flex-1 overflow-auto py-2">
+        <nav className="grid items-start px-4 text-sm font-medium">
+          {sidebarItems.map((item) => (
+            <React.Fragment key={item.title}>
+              {item.submenu ? (
+                <div className="flex flex-col space-y-1">
+                  <h4 className="font-medium text-gray-500 px-2 py-1.5">
+                    {item.title}
+                  </h4>
+                  {item.submenu.map((subItem) => (
+                    <Button
+                      key={subItem.path}
+                      variant="ghost"
+                      className={cn(
+                        "justify-start pl-8",
+                        location.pathname === subItem.path &&
+                          "bg-gray-200 dark:bg-gray-800"
+                      )}
+                      onClick={() => {
+                        navigate(subItem.path);
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      {subItem.name}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "justify-start gap-2",
+                    location.pathname === item.path &&
+                      "bg-gray-200 dark:bg-gray-800"
+                  )}
+                  onClick={() => {
+                    navigate(item.path);
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.title}
+                </Button>
+              )}
+            </React.Fragment>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar para Mobile */}
-      <div className="lg:hidden">
-        <div className={`fixed inset-0 flex z-40 ${isSidebarOpen ? '' : 'pointer-events-none'}`}>
-          <div
-            className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity duration-300 ease-in-out ${isSidebarOpen ? 'opacity-100' : 'opacity-0'
-              }`}
-            onClick={() => setIsSidebarOpen(false)}
-          />
+    <div className="flex min-h-screen">
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 bg-white shadow-md rounded-full"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
 
-          <div
-            className={`relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white transition-transform duration-300 ease-in-out transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`}
-          >
-            <div className={`absolute top-0 right-0 -mr-12 pt-2 ${isSidebarOpen ? 'block' : 'hidden'}`}>
-              <button
-                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <X className="h-6 w-6 text-white" />
-              </button>
-            </div>
-
-            <div className="flex-shrink-0 flex items-center px-4">
-              <img
-                className="h-8 w-auto"
-                src="/logo-sv.png"
-                alt="SV Sobral"
-              />
-            </div>
-            <div className="mt-5 flex-1 h-0 overflow-y-auto">
-              <nav className="px-2 space-y-1">
-                {navigation.map(renderNavItem)}
-              </nav>
-            </div>
-          </div>
+      {/* Mobile Sidebar */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 lg:hidden",
+          isMobileMenuOpen ? "block" : "hidden"
+        )}
+      >
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        
+        {/* Sidebar */}
+        <div className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-gray-800">
+          <Sidebar />
         </div>
       </div>
 
-      {/* Sidebar para Desktop */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64">
-          <div className="flex flex-col flex-grow border-r border-gray-200 pt-5 pb-4 bg-white overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <img
-                className="h-8 w-auto"
-                src="/logo-sv.png"
-                alt="SV Sobral"
-              />
-            </div>
-            <div className="mt-5 flex-grow flex flex-col">
-              <nav className="flex-1 px-2 space-y-1">
-                {navigation.map(renderNavItem)}
-              </nav>
-            </div>
-          </div>
-        </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block w-72 border-r bg-gray-100/40 dark:bg-gray-800/40">
+        <Sidebar />
       </div>
 
-      {/* Conteúdo Principal */}
-      <div className="flex-1 overflow-auto focus:outline-none">
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200 lg:hidden">
-          <button
-            className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 lg:hidden"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <div className="flex-1 flex justify-between px-4 sm:px-6 lg:px-8">
-            <div className="flex-1 flex">
-              <img
-                className="h-10 w-auto my-auto"
-                src="/logo-sv.png"
-                alt="SV Sobral"
-              />
-            </div>
-          </div>
-        </div>
-        {children}
+      {/* Main content */}
+      <div className="flex-1 overflow-auto">
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );
